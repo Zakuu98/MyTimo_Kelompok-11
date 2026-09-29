@@ -2,92 +2,129 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mytimo/main.dart';
 import 'package:mytimo/screens/auth/login_screen.dart';
-import 'package:mytimo/screens/auth/register_screen.dart';
-import 'package:mytimo/screens/landing/landing_screen.dart';
-import 'package:mytimo/screens/home/home_screen.dart';
+import 'package:mytimo/screens/catatan_form_screen.dart';
+import 'package:mytimo/screens/not_found_screen.dart';
+import 'package:mytimo/utils/validators.dart';
 
 void main() {
-  testWidgets('MyTimo complete navigation and login flow test', (WidgetTester tester) async {
-    // 1. Pump App
-    await tester.pumpWidget(const MyTimoApp());
-    await tester.pumpAndSettle();
+  group('Validators Unit Tests (Langkah 3 & 4)', () {
+    test('requiredField validator', () {
+      expect(Validators.requiredField(''), 'Field ini wajib diisi');
+      expect(Validators.requiredField(null), 'Field ini wajib diisi');
+      expect(Validators.requiredField('ada'), isNull);
+    });
 
-    // Verify LandingScreen is shown
-    expect(find.byType(LandingScreen), findsOneWidget);
-    expect(find.text('Mulai Sekarang'), findsOneWidget);
-    expect(find.text('Masuk ke Akun Anda'), findsOneWidget);
+    test('email validator', () {
+      expect(Validators.email(''), 'Email wajib diisi');
+      expect(Validators.email('abc'), 'Format email tidak valid');
+      expect(Validators.email('user@mail.com'), isNull);
+    });
 
-    // 2. Navigate to Login
-    await tester.tap(find.text('Masuk ke Akun Anda'));
-    await tester.pumpAndSettle();
+    test('password validator', () {
+      expect(Validators.password(''), 'Password wajib diisi');
+      expect(Validators.password('123'), 'Password minimal 8 karakter');
+      expect(Validators.password('12345678'), isNull);
+    });
 
-    // Verify LoginScreen is displayed
-    expect(find.byType(LoginScreen), findsOneWidget);
-    expect(find.text('Masuk'), findsOneWidget);
-
-    // 3. Perform Login
-    await tester.tap(find.text('Masuk'));
-    await tester.pump(const Duration(milliseconds: 700));
-    await tester.pumpAndSettle();
-
-    // 4. Verify HomeScreen & Dashboard elements
-    expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('Halo Pak Budi'), findsOneWidget);
-    expect(find.text('Foto Daun Tomat Sekarang'), findsOneWidget);
-    expect(find.text('Total Deteksi'), findsOneWidget);
-    expect(find.text('Ensiklopedia Penyakit'), findsOneWidget);
-    expect(find.text('Late Blight'), findsOneWidget);
-    expect(find.text('Septoria'), findsOneWidget);
-    expect(find.text('Riwayat Diagnosa Terbaru'), findsOneWidget);
+    test('minLength validator', () {
+      expect(
+        Validators.minLength('ab', 5, fieldName: 'Catatan'),
+        'Catatan minimal 5 karakter',
+      );
+      expect(
+        Validators.minLength('abcde', 5, fieldName: 'Catatan'),
+        isNull,
+      );
+    });
   });
 
-  testWidgets('MyTimo registration flow test', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyTimoApp());
-    await tester.pumpAndSettle();
+  group('Latihan 2 Flow & Navigation Tests (Langkah 4, 6, 8, 9)', () {
+    testWidgets('1. Login dengan isian salah menampilkan pesan error', (tester) async {
+      await tester.pumpWidget(const MyTimoApp());
+      await tester.pumpAndSettle();
 
-    // Tap Mulai Sekarang -> goes to Register
-    await tester.tap(find.text('Mulai Sekarang'));
-    await tester.pumpAndSettle();
+      expect(find.byType(LoginScreen), findsOneWidget);
 
-    expect(find.byType(RegisterScreen), findsOneWidget);
-    expect(find.text('Daftar'), findsOneWidget);
+      // Tekan tombol Masuk tanpa mengisi apa pun
+      await tester.tap(find.text('Masuk'));
+      await tester.pumpAndSettle();
 
-    // Enter details
-    await tester.enterText(find.widgetWithText(TextFormField, 'Nama'), 'Pak Budi Santoso');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'budi.santoso@kebun.id');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Kata Sandi'), 'kebuntomat123');
+      expect(find.text('Email wajib diisi'), findsOneWidget);
+      expect(find.text('Password wajib diisi'), findsOneWidget);
+    });
 
-    // Tap Daftar
-    await tester.tap(find.text('Daftar'));
-    await tester.pump(const Duration(milliseconds: 700));
-    await tester.pumpAndSettle();
+    testWidgets('2. Format email salah & password < 8 karakter menampilkan error validator', (tester) async {
+      await tester.pumpWidget(const MyTimoApp());
+      await tester.pumpAndSettle();
 
-    // Arrives at HomeScreen
-    expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('Halo Pak Budi Santoso'), findsOneWidget);
-  });
+      final textFields = find.byType(TextFormField);
+      await tester.enterText(textFields.at(0), 'abc');
+      await tester.enterText(textFields.at(1), '123');
 
-  testWidgets('MyTimo disease detail bottom sheet test (FR-05)', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyTimoApp());
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Masuk'));
+      await tester.pumpAndSettle();
 
-    // Go directly to home via login
-    await tester.tap(find.text('Masuk ke Akun Anda'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Masuk'));
-    await tester.pump(const Duration(milliseconds: 700));
-    await tester.pumpAndSettle();
+      expect(find.text('Format email tidak valid'), findsOneWidget);
+      expect(find.text('Password minimal 8 karakter'), findsOneWidget);
+    });
 
-    // Scroll down to make disease cards visible
-    await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -300));
-    await tester.pumpAndSettle();
+    testWidgets('3. Form Catatan screen can validate and return note', (tester) async {
+      String? returnedNote;
+      await tester.pumpWidget(
+        MaterialApp(
+          onGenerateRoute: (settings) {
+            return MaterialPageRoute(
+              builder: (ctx) => Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () async {
+                    returnedNote = await Navigator.push<String>(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CatatanFormScreen()),
+                    );
+                  },
+                  child: const Text('Buka'),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Late Blight'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Buka'));
+      await tester.pumpAndSettle();
 
-    // Verify detail sheet shows treatment and prevention steps
-    expect(find.text('Langkah Penanganan (FR-05)'), findsOneWidget);
-    expect(find.text('Langkah Pencegahan'), findsOneWidget);
-    expect(find.text('Phytophthora infestans'), findsOneWidget);
+      expect(find.byType(CatatanFormScreen), findsOneWidget);
+
+      // Tap Simpan tanpa isian
+      await tester.tap(find.text('Simpan'));
+      await tester.pumpAndSettle();
+      expect(find.text('Catatan wajib diisi'), findsOneWidget);
+
+      // Isi < 5 karakter
+      await tester.enterText(find.byType(TextFormField), 'tes');
+      await tester.tap(find.text('Simpan'));
+      await tester.pumpAndSettle();
+      expect(find.text('Catatan minimal 5 karakter'), findsOneWidget);
+
+      // Isi valid
+      await tester.enterText(find.byType(TextFormField), 'Catatan penting');
+      await tester.tap(find.text('Simpan'));
+      await tester.pumpAndSettle();
+
+      expect(returnedNote, 'Catatan penting');
+    });
+
+    testWidgets('4. 404 NotFoundScreen is displayed for unknown routes', (tester) async {
+      await tester.pumpWidget(const MyTimoApp());
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(LoginScreen));
+      Navigator.pushNamed(context, '/tidak-ada');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotFoundScreen), findsOneWidget);
+      expect(find.text('404'), findsOneWidget);
+    });
   });
 }

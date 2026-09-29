@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../routes/app_routes.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_sizes.dart';
 import '../../theme/app_text_styles.dart';
+import '../../utils/validators.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
-import '../main_navigation_screen.dart';
 import 'register_screen.dart';
 
 /// Login Screen MyTimo sesuai Frame 2 Figma
@@ -18,10 +19,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // (1) key untuk Form dan controller untuk setiap field
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'budi.petani@mytimo.id');
-  final _passwordController = TextEditingController(text: '12345678');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
+  // (2) buang controller saat layar ditutup
   @override
   void dispose() {
     _emailController.dispose();
@@ -29,20 +32,22 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+  // (3) dijalankan saat tombol Masuk ditekan
+  Future<void> _submit() async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return; // ada isian yang salah -> berhenti
 
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.login(
-      _emailController.text,
+      _emailController.text.trim(),
       _passwordController.text,
     );
 
-    if (success && mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-        (route) => false,
-      );
+    if (!mounted) return;
+
+    if (success) {
+      // Isian benar -> pindah ke Home, Login dibuang dari stack
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     }
   }
 
@@ -93,8 +98,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 horizontal: AppSizes.p24,
                 vertical: AppSizes.p8,
               ),
+              // (4) bungkus field dengan Form
               child: Form(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -121,22 +128,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: AppSizes.p32),
 
-                    // Email Input
+                    // (5) TextFormField + validator
                     AppTextField(
                       label: 'Email',
                       hintText: 'Email',
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       prefixIcon: Icons.mail_outline_rounded,
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Email tidak boleh kosong';
-                        }
-                        if (!val.contains('@')) {
-                          return 'Format email tidak valid';
-                        }
-                        return null;
-                      },
+                      validator: Validators.email,
                     ),
 
                     const SizedBox(height: AppSizes.p20),
@@ -161,15 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             onPressed: auth.togglePasswordVisibility,
                           ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Kata sandi tidak boleh kosong';
-                            }
-                            if (val.length < 6) {
-                              return 'Kata sandi minimal 6 karakter';
-                            }
-                            return null;
-                          },
+                          validator: Validators.password,
                         );
                       },
                     ),
@@ -226,14 +217,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: AppSizes.p32),
 
-                    // Tombol Masuk
+                    // (6) tombol memanggil _submit
                     Consumer<AuthProvider>(
                       builder: (context, auth, _) {
                         return AppButton(
                           label: 'Masuk',
                           isLoading: auth.isLoading,
                           borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                          onPressed: _handleLogin,
+                          onPressed: _submit,
                         );
                       },
                     ),
