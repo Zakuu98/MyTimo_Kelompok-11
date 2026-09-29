@@ -5,10 +5,7 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/navigation_provider.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/register_screen.dart';
-import 'screens/landing/landing_screen.dart';
-import 'screens/main_navigation_screen.dart';
+import 'routes/app_routes.dart';
 import 'theme/app_colors.dart';
 
 void main() {
@@ -56,13 +53,10 @@ class MyTimoApp extends StatelessWidget {
             ),
           ),
         ),
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const LandingScreen(),
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const MainNavigationScreen(),
-        },
+        // Menggunakan initialRoute dan route handler sesuai Modul Praktikum 2
+        initialRoute: AppRoutes.login,
+        onGenerateRoute: AppRoutes.onGenerateRoute,
+        onUnknownRoute: AppRoutes.onUnknownRoute,
       ),
     );
   }
