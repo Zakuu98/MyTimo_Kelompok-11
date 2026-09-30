@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../routes/app_routes.dart';
+import '../../utils/validators.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_sizes.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
-import '../main_navigation_screen.dart';
 import 'register_screen.dart';
 
-/// Login Screen MyTimo sesuai Frame 2 Figma
+/// Login Screen MyTimo sesuai Frame 2 Figma & Pertemuan 2 (Form, Validasi, Routes)
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -18,9 +19,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // Key Form dan Controller (dimulai dalam keadaan kosong)
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'budi.petani@mytimo.id');
-  final _passwordController = TextEditingController(text: '12345678');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void dispose() {
@@ -29,8 +31,10 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // Menangani submit form dan navigasi ke Home lewat named route AppRoutes.home
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
 
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.login(
@@ -38,11 +42,11 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text,
     );
 
-    if (success && mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-        (route) => false,
-      );
+    if (!mounted) return;
+
+    if (success) {
+      // Pindah ke Home dengan named route, Login dibuang dari stack
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     }
   }
 
@@ -121,22 +125,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: AppSizes.p32),
 
-                    // Email Input
+                    // Email Input dengan Catatan Format Email Valid
                     AppTextField(
                       label: 'Email',
-                      hintText: 'Email',
+                      hintText: 'nama@gmail.com',
+                      helperText: 'Catatan: Masukkan email dengan format yang benar (contoh: nama@gmail.com)',
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       prefixIcon: Icons.mail_outline_rounded,
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Email tidak boleh kosong';
-                        }
-                        if (!val.contains('@')) {
-                          return 'Format email tidak valid';
-                        }
-                        return null;
-                      },
+                      validator: Validators.email,
                     ),
 
                     const SizedBox(height: AppSizes.p20),
@@ -161,15 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             onPressed: auth.togglePasswordVisibility,
                           ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Kata sandi tidak boleh kosong';
-                            }
-                            if (val.length < 6) {
-                              return 'Kata sandi minimal 6 karakter';
-                            }
-                            return null;
-                          },
+                          validator: Validators.password,
                         );
                       },
                     ),

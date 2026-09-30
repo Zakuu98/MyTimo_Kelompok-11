@@ -7,6 +7,7 @@ import '../theme/app_text_styles.dart';
 class AppTextField extends StatelessWidget {
   final String label;
   final String hintText;
+  final String? helperText;
   final TextEditingController? controller;
   final IconData? prefixIcon;
   final Widget? suffixIcon;
@@ -20,6 +21,7 @@ class AppTextField extends StatelessWidget {
     super.key,
     required this.label,
     required this.hintText,
+    this.helperText,
     this.controller,
     this.prefixIcon,
     this.suffixIcon,
@@ -51,6 +53,12 @@ class AppTextField extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: AppTextStyles.formHint,
+            helperText: helperText,
+            helperMaxLines: 2,
+            helperStyle: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
             filled: true,
             fillColor: AppColors.surface,
             contentPadding: const EdgeInsets.symmetric(
