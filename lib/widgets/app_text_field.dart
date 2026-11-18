@@ -15,6 +15,10 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
   final TextInputAction textInputAction;
+  final int maxLines;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final bool isRequired;
 
   const AppTextField({
     super.key,
@@ -28,6 +32,10 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.textInputAction = TextInputAction.next,
+    this.maxLines = 1,
+    this.readOnly = false,
+    this.onTap,
+    this.isRequired = false,
   });
 
   @override
@@ -35,11 +43,24 @@ class AppTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.formLabel,
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: AppTextStyles.formLabel.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 13.5,
+            ),
+            children: [
+              if (isRequired)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: AppColors.tomatoRed, fontWeight: FontWeight.bold),
+                ),
+            ],
+          ),
         ),
-        const SizedBox(height: AppSizes.p8),
+        const SizedBox(height: 7),
         TextFormField(
           controller: controller,
           obscureText: obscureText,
@@ -47,15 +68,18 @@ class AppTextField extends StatelessWidget {
           textInputAction: textInputAction,
           validator: validator,
           onChanged: onChanged,
-          style: AppTextStyles.formInput,
+          maxLines: maxLines,
+          readOnly: readOnly,
+          onTap: onTap,
+          style: AppTextStyles.formInput.copyWith(fontSize: 14.5),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: AppTextStyles.formHint,
+            hintStyle: AppTextStyles.formHint.copyWith(fontSize: 14),
             filled: true,
             fillColor: AppColors.surface,
-            contentPadding: const EdgeInsets.symmetric(
+            contentPadding: EdgeInsets.symmetric(
               horizontal: AppSizes.p16,
-              vertical: AppSizes.p14,
+              vertical: maxLines > 1 ? AppSizes.p14 : AppSizes.p14,
             ),
             prefixIcon: prefixIcon != null
                 ? Icon(
@@ -66,23 +90,23 @@ class AppTextField extends StatelessWidget {
                 : null,
             suffixIcon: suffixIcon,
             border: OutlineInputBorder(
-              borderRadius: AppSizes.roundedXL,
+              borderRadius: BorderRadius.circular(AppSizes.radiusL),
               borderSide: const BorderSide(color: AppColors.border, width: 1.2),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: AppSizes.roundedXL,
+              borderRadius: BorderRadius.circular(AppSizes.radiusL),
               borderSide: const BorderSide(color: AppColors.border, width: 1.2),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: AppSizes.roundedXL,
-              borderSide: const BorderSide(color: AppColors.borderFocused, width: 1.8),
+              borderRadius: BorderRadius.circular(AppSizes.radiusL),
+              borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.8),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: AppSizes.roundedXL,
+              borderRadius: BorderRadius.circular(AppSizes.radiusL),
               borderSide: const BorderSide(color: AppColors.tomatoRed, width: 1.2),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: AppSizes.roundedXL,
+              borderRadius: BorderRadius.circular(AppSizes.radiusL),
               borderSide: const BorderSide(color: AppColors.tomatoRed, width: 1.8),
             ),
           ),

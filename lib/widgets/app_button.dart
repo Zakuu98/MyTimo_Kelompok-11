@@ -3,15 +3,16 @@ import '../theme/app_colors.dart';
 import '../theme/app_sizes.dart';
 import '../theme/app_text_styles.dart';
 
-enum AppButtonVariant { primary, secondary, whitePill, danger }
+enum AppButtonVariant { primary, secondary, whitePill, outlineWhite, danger, dangerOutline }
 
-/// Reusable button widget adhering to MyTimo design guidelines
+/// Reusable button widget adhering to MyTimo new design guidelines
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final AppButtonVariant variant;
   final bool isLoading;
   final Widget? prefixIcon;
+  final Widget? suffixIcon;
   final double? width;
   final double height;
   final BorderRadius? borderRadius;
@@ -23,6 +24,7 @@ class AppButton extends StatelessWidget {
     this.variant = AppButtonVariant.primary,
     this.isLoading = false,
     this.prefixIcon,
+    this.suffixIcon,
     this.width,
     this.height = AppSizes.buttonHeight,
     this.borderRadius,
@@ -34,6 +36,7 @@ class AppButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.prefixIcon,
+    this.suffixIcon,
     this.width,
     this.height = AppSizes.buttonHeight,
     this.borderRadius,
@@ -45,10 +48,47 @@ class AppButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.prefixIcon,
+    this.suffixIcon,
     this.width,
-    this.height = AppSizes.buttonHeightSmall,
+    this.height = AppSizes.buttonHeight,
     this.borderRadius,
   }) : variant = AppButtonVariant.whitePill;
+
+  const AppButton.outlineWhite({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.width,
+    this.height = AppSizes.buttonHeight,
+    this.borderRadius,
+  }) : variant = AppButtonVariant.outlineWhite;
+
+  const AppButton.danger({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.width,
+    this.height = AppSizes.buttonHeight,
+    this.borderRadius,
+  }) : variant = AppButtonVariant.danger;
+
+  const AppButton.dangerOutline({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.width,
+    this.height = AppSizes.buttonHeight,
+    this.borderRadius,
+  }) : variant = AppButtonVariant.dangerOutline;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +96,7 @@ class AppButton extends StatelessWidget {
     Color foregroundColor;
     BorderSide borderSide = BorderSide.none;
     TextStyle textStyle = AppTextStyles.buttonPrimary;
-    BorderRadius effectiveRadius = borderRadius ?? AppSizes.roundedXL;
+    BorderRadius effectiveRadius = borderRadius ?? BorderRadius.circular(AppSizes.radiusFull);
 
     switch (variant) {
       case AppButtonVariant.primary:
@@ -71,17 +111,34 @@ class AppButton extends StatelessWidget {
         break;
       case AppButtonVariant.whitePill:
         backgroundColor = AppColors.surface;
-        foregroundColor = AppColors.tomatoBannerDark;
-        textStyle = AppTextStyles.buttonSmall.copyWith(
-          color: AppColors.tomatoBannerDark,
+        foregroundColor = AppColors.primaryGreen;
+        textStyle = AppTextStyles.buttonPrimary.copyWith(
+          color: AppColors.primaryGreen,
           fontWeight: FontWeight.w700,
         );
-        effectiveRadius = AppSizes.roundedFull;
+        break;
+      case AppButtonVariant.outlineWhite:
+        backgroundColor = Colors.transparent;
+        foregroundColor = AppColors.textWhite;
+        borderSide = const BorderSide(color: Colors.white, width: 1.5);
+        textStyle = AppTextStyles.buttonPrimary.copyWith(
+          color: AppColors.textWhite,
+          fontWeight: FontWeight.w600,
+        );
         break;
       case AppButtonVariant.danger:
         backgroundColor = AppColors.tomatoRed;
         foregroundColor = AppColors.textWhite;
         textStyle = AppTextStyles.buttonPrimary;
+        break;
+      case AppButtonVariant.dangerOutline:
+        backgroundColor = const Color(0xFFFFF5F5);
+        foregroundColor = AppColors.tomatoRed;
+        borderSide = const BorderSide(color: Color(0xFFFFCDD2), width: 1.2);
+        textStyle = AppTextStyles.buttonPrimary.copyWith(
+          color: AppColors.tomatoRed,
+          fontWeight: FontWeight.w700,
+        );
         break;
     }
 
@@ -102,10 +159,18 @@ class AppButton extends StatelessWidget {
                 prefixIcon!,
                 const SizedBox(width: AppSizes.p8),
               ],
-              Text(
-                label,
-                style: textStyle.copyWith(color: foregroundColor),
+              Flexible(
+                child: Text(
+                  label,
+                  style: textStyle.copyWith(color: foregroundColor),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              if (suffixIcon != null) ...[
+                const SizedBox(width: AppSizes.p8),
+                suffixIcon!,
+              ],
             ],
           );
 
@@ -119,21 +184,17 @@ class AppButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
-          elevation: variant == AppButtonVariant.whitePill ? 1 : 0,
+          elevation: variant == AppButtonVariant.whitePill ? 3 : 0,
+          shadowColor: const Color(0x33000000),
           minimumSize: Size.zero,
           shape: RoundedRectangleBorder(
             borderRadius: effectiveRadius,
             side: borderSide,
           ),
-          padding: variant == AppButtonVariant.whitePill
-              ? const EdgeInsets.symmetric(
-                  horizontal: AppSizes.p14,
-                  vertical: AppSizes.p6,
-                )
-              : const EdgeInsets.symmetric(
-                  horizontal: AppSizes.p20,
-                  vertical: AppSizes.p10,
-                ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.p20,
+            vertical: AppSizes.p10,
+          ),
         ),
         child: buttonContent,
       ),
