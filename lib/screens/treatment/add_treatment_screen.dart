@@ -5,15 +5,19 @@ import '../../providers/treatment_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_sizes.dart';
 import '../../theme/app_text_styles.dart';
-import '../../widgets/app_button.dart';
-import '../../widgets/app_text_field.dart';
+import '../../widgets/mytimo_bottom_nav.dart';
 
-/// Screen 24: Form Tambah Rencana Penanganan
+/// Screen 24: Buat Rencana Rawat
 /// Anggota 3: Athaya Nasywa Mahira - 2411523028
 class AddTreatmentScreen extends StatefulWidget {
   final String? initialDiseaseName;
+  final double? initialConfidence;
 
-  const AddTreatmentScreen({super.key, this.initialDiseaseName});
+  const AddTreatmentScreen({
+    super.key,
+    this.initialDiseaseName,
+    this.initialConfidence,
+  });
 
   @override
   State<AddTreatmentScreen> createState() => _AddTreatmentScreenState();
@@ -21,14 +25,13 @@ class AddTreatmentScreen extends StatefulWidget {
 
 class _AddTreatmentScreenState extends State<AddTreatmentScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _diseaseController = TextEditingController();
-  final _notesController = TextEditingController();
-  final _stepController = TextEditingController();
+  final _titleController = TextEditingController();
 
   String _selectedPlant = 'Tomat Cherry Blok A';
-  TreatmentPriority _selectedPriority = TreatmentPriority.sedang;
+  String _selectedDiagnosis = 'Early Blight (94.2%) • 06 Okt 2026';
   DateTime _targetDate = DateTime.now().add(const Duration(days: 14));
-  final List<String> _steps = [];
+  final Set<int> _selectedSteps = {0, 1}; // default 2 step terpilih
+  bool _isSaving = false;
 
   final List<String> _plantOptions = [
     'Tomat Cherry Blok A',
@@ -37,31 +40,40 @@ class _AddTreatmentScreenState extends State<AddTreatmentScreen> {
     'Tomat Sayur Blok C',
   ];
 
-  bool _isSaving = false;
+  final List<String> _diagnosisOptions = [
+    'Early Blight (94.2%) • 06 Okt 2026',
+    'Late Blight (88.5%) • 05 Okt 2026',
+    'Leaf Mold (76.1%) • 04 Okt 2026',
+    'Tambahkan manual',
+  ];
+
+  final List<String> _availableSteps = [
+    'Pangkas daun berpenyakit & bakar',
+    'Semprot fungisida tembaga 2g/L (Pagi)',
+    'Atur irigasi & bersihkan mulsa',
+    'Monitor 3 hari sekali',
+    'Periksa perkembangan penyakit',
+    'Semprot pestisida organik',
+  ];
 
   @override
   void initState() {
     super.initState();
     if (widget.initialDiseaseName != null) {
-      _diseaseController.text = widget.initialDiseaseName!;
-    }
-    // Default steps from recommendation
-    if (widget.initialDiseaseName != null) {
-      _steps.addAll([
-        'Pangkas dan buang daun yang terinfeksi',
-        'Semprot fungisida berbahan aktif klorotalonil setiap 7 hari',
-        'Hindari penyiraman dari atas (gunakan drip)',
-        'Monitor perkembangan penyakit setiap 3 hari',
-      ]);
+      _selectedDiagnosis = '${widget.initialDiseaseName} (${widget.initialConfidence?.toStringAsFixed(1) ?? '0.0'}%)';
     }
   }
 
   @override
   void dispose() {
-    _diseaseController.dispose();
-    _notesController.dispose();
-    _stepController.dispose();
+    _titleController.dispose();
     super.dispose();
+  }
+
+  String _formatDate(DateTime d) {
+    final months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    return '${d.day} ${months[d.month]} ${d.year}';
   }
 
   @override
@@ -71,316 +83,250 @@ class _AddTreatmentScreenState extends State<AddTreatmentScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: AppColors.textWhite,
+        elevation: 0,
         title: const Text(
-          'Buat Rencana Penanganan',
+          'Buat Rencana Rawat',
           style: TextStyle(
-              color: AppColors.textWhite,
-              fontSize: 18,
-              fontWeight: FontWeight.w700),
+            color: AppColors.textWhite,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         iconTheme: const IconThemeData(color: AppColors.textWhite),
-        elevation: 0,
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSizes.p16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSection('Informasi Tanaman & Penyakit', [
-                _buildDropdownField(
-                  label: 'Nama Tanaman *',
-                  value: _selectedPlant,
-                  items: _plantOptions,
-                  onChanged: (val) => setState(() => _selectedPlant = val!),
-                ),
-                const SizedBox(height: AppSizes.p16),
-                AppTextField(
-                  label: 'Nama Penyakit *',
-                  hintText: 'Contoh: Bercak Kering (Early Blight)',
-                  controller: _diseaseController,
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Nama penyakit wajib diisi' : null,
-                ),
-              ]),
-              const SizedBox(height: AppSizes.p16),
-              _buildSection('Rencana & Prioritas', [
-                _buildDatePicker(),
-                const SizedBox(height: AppSizes.p16),
-                _buildPrioritySelector(),
-              ]),
-              const SizedBox(height: AppSizes.p16),
-              _buildSection('Langkah Tindakan *', [
-                _buildStepsList(),
-                const SizedBox(height: AppSizes.p12),
-                _buildAddStepField(),
-              ]),
-              const SizedBox(height: AppSizes.p16),
-              _buildSection('Catatan Tambahan', [
-                AppTextField(
-                  label: 'Catatan (opsional)',
-                  hintText: 'Tambahkan catatan khusus tentang kondisi tanaman...',
-                  controller: _notesController,
-                  maxLines: 3,
-                ),
-              ]),
-              const SizedBox(height: AppSizes.p28),
-              AppButton(
-                label: 'Simpan Rencana',
-                isLoading: _isSaving,
-                onPressed: _savePlan,
+              // Tanaman Terkait
+              _buildLabel('Tanaman Terkait *'),
+              const SizedBox(height: 8),
+              _buildDropdown(
+                value: _selectedPlant,
+                items: _plantOptions,
+                prefixIcon: Icons.grass_rounded,
+                onChanged: (val) => setState(() => _selectedPlant = val!),
               ),
-              const SizedBox(height: AppSizes.p24),
+              const SizedBox(height: 16),
+
+              // Dasar Diagnosis
+              _buildLabel('Dasar Diagnosis *'),
+              const SizedBox(height: 8),
+              _buildDropdown(
+                value: _selectedDiagnosis,
+                items: _diagnosisOptions,
+                prefixIcon: Icons.document_scanner_outlined,
+                onChanged: (val) => setState(() => _selectedDiagnosis = val!),
+              ),
+              const SizedBox(height: 16),
+
+              // Judul Tindakan
+              _buildLabel('Judul Tindakan *'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _titleController,
+                validator: (v) => v == null || v.isEmpty ? 'Judul wajib diisi' : null,
+                decoration: InputDecoration(
+                  hintText: 'Contoh: Pemulihan Early Blight Daun Bawah',
+                  hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                  prefixIcon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary, size: 20),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Pilih Langkah Tindakan
+              _buildLabel('Pilih Langkah Tindakan (* Min 1)'),
+              const SizedBox(height: 8),
+              ..._availableSteps.asMap().entries.map((e) {
+                final isSelected = _selectedSteps.contains(e.key);
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    if (isSelected) {
+                      _selectedSteps.remove(e.key);
+                    } else {
+                      _selectedSteps.add(e.key);
+                    }
+                  }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primaryGreenSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primaryGreen : AppColors.border,
+                        width: isSelected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primaryGreen : Colors.transparent,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? AppColors.primaryGreen : AppColors.textMuted,
+                              width: 2,
+                            ),
+                          ),
+                          child: isSelected
+                              ? const Icon(Icons.check, color: Colors.white, size: 14)
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            e.value,
+                            style: TextStyle(
+                              color: isSelected ? AppColors.primaryGreenText : AppColors.textPrimary,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 20),
+
+              // Target Tanggal Selesai
+              _buildLabel('Target Tanggal Selesai *'),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _pickDate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today_rounded,
+                          size: 18, color: AppColors.primaryGreen),
+                      const SizedBox(width: 10),
+                      Text(
+                        _formatDate(_targetDate),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.arrow_drop_down_rounded,
+                          color: AppColors.textSecondary),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // Tombol Simpan
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isSaving ? null : _savePlan,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check_rounded, color: Colors.white, size: 20),
+                  label: Text(
+                    _isSaving ? 'Menyimpan...' : 'Simpan Rencana Penanganan',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
+      bottomNavigationBar: const MyTimoBottomNav(activeIndex: 2),
     );
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: AppTextStyles.sectionTitle),
-        const SizedBox(height: AppSizes.p12),
-        Container(
-          padding: const EdgeInsets.all(AppSizes.p16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppSizes.roundedXL,
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-            boxShadow: AppSizes.cardShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: children,
-          ),
-        ),
-      ],
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      ),
     );
   }
 
-  Widget _buildDropdownField({
-    required String label,
+  Widget _buildDropdown({
     required String value,
     required List<String> items,
+    required IconData prefixIcon,
     required void Function(String?) onChanged,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.formLabel),
-        const SizedBox(height: AppSizes.p8),
-        DropdownButtonFormField<String>(initialValue: value,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: AppSizes.roundedM,
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: AppSizes.roundedM,
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: AppSizes.roundedM,
-              borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.p16, vertical: AppSizes.p12),
-            filled: true,
-            fillColor: AppColors.background,
-          ),
-          items: items
-              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-              .toList(),
-          onChanged: onChanged,
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        prefixIcon: Icon(prefixIcon, color: AppColors.textSecondary, size: 20),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
-      ],
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+        ),
+      ),
+      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item, overflow: TextOverflow.ellipsis))).toList(),
+      onChanged: onChanged,
     );
-  }
-
-  Widget _buildDatePicker() {
-    final months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
-    ];
-    final formatted =
-        '${_targetDate.day} ${months[_targetDate.month]} ${_targetDate.year}';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Target Tanggal Selesai *', style: AppTextStyles.formLabel),
-        const SizedBox(height: AppSizes.p8),
-        GestureDetector(
-          onTap: _pickDate,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.p16, vertical: AppSizes.p14),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: AppSizes.roundedM,
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.calendar_today_rounded,
-                    size: 18, color: AppColors.primaryGreen),
-                const SizedBox(width: AppSizes.p10),
-                Text(formatted, style: AppTextStyles.formInput),
-                const Spacer(),
-                const Icon(Icons.arrow_drop_down_rounded,
-                    color: AppColors.textSecondary),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPrioritySelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Prioritas *', style: AppTextStyles.formLabel),
-        const SizedBox(height: AppSizes.p8),
-        Row(
-          children: TreatmentPriority.values.map((priority) {
-            final isSelected = _selectedPriority == priority;
-            final color = _getPriorityColor(priority);
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: AppSizes.p6),
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedPriority = priority),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.p10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? color : AppColors.background,
-                      borderRadius: AppSizes.roundedM,
-                      border: Border.all(
-                          color: isSelected ? color : AppColors.border),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      priority.label,
-                      style: AppTextStyles.badgeText.copyWith(
-                        color: isSelected ? AppColors.textWhite : color,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStepsList() {
-    if (_steps.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(AppSizes.p16),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: AppSizes.roundedM,
-          border: Border.all(color: AppColors.border, style: BorderStyle.solid),
-        ),
-        child: const Center(
-          child: Text('Belum ada langkah. Tambahkan di bawah.',
-              style: AppTextStyles.bodyMuted),
-        ),
-      );
-    }
-
-    return Column(
-      children: _steps.asMap().entries.map((entry) {
-        final i = entry.key;
-        final step = entry.value;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSizes.p8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryGreen,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '${i + 1}',
-                  style: AppTextStyles.badgeText
-                      .copyWith(color: AppColors.textWhite, fontSize: 11),
-                ),
-              ),
-              const SizedBox(width: AppSizes.p10),
-              Expanded(child: Text(step, style: AppTextStyles.body)),
-              GestureDetector(
-                onTap: () => setState(() => _steps.removeAt(i)),
-                child: const Icon(Icons.close_rounded,
-                    size: 18, color: AppColors.textMuted),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildAddStepField() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _stepController,
-            decoration: InputDecoration(
-              hintText: 'Tambah langkah tindakan...',
-              hintStyle: AppTextStyles.formHint,
-              border: OutlineInputBorder(
-                borderRadius: AppSizes.roundedM,
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: AppSizes.roundedM,
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.p12, vertical: AppSizes.p10),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSizes.p8),
-        ElevatedButton(
-          onPressed: _addStep,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryGreen,
-            shape: RoundedRectangleBorder(borderRadius: AppSizes.roundedM),
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.p14, vertical: AppSizes.p12),
-          ),
-          child: const Icon(Icons.add_rounded, color: AppColors.textWhite),
-        ),
-      ],
-    );
-  }
-
-  void _addStep() {
-    final text = _stepController.text.trim();
-    if (text.isNotEmpty) {
-      setState(() {
-        _steps.add(text);
-        _stepController.clear();
-      });
-    }
   }
 
   Future<void> _pickDate() async {
@@ -389,24 +335,31 @@ class _AddTreatmentScreenState extends State<AddTreatmentScreen> {
       initialDate: _targetDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: AppColors.primaryGreen),
-          ),
-          child: child!,
-        );
-      },
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.primaryGreen),
+        ),
+        child: child!,
+      ),
     );
     if (picked != null) setState(() => _targetDate = picked);
   }
 
   void _savePlan() {
     if (!_formKey.currentState!.validate()) return;
-    if (_steps.isEmpty) {
+    if (_selectedSteps.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tambahkan minimal satu langkah tindakan'),
+          content: Text('Pilih minimal 1 langkah tindakan'),
+          backgroundColor: AppColors.warningOrange,
+        ),
+      );
+      return;
+    }
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Judul tindakan wajib diisi'),
           backgroundColor: AppColors.warningOrange,
         ),
       );
@@ -417,16 +370,18 @@ class _AddTreatmentScreenState extends State<AddTreatmentScreen> {
     final provider = context.read<TreatmentProvider>();
     final planId = provider.generateId();
 
+    final selectedStepList = _selectedSteps.map((i) => _availableSteps[i]).toList();
+
     final newPlan = TreatmentPlan(
       id: planId,
       plantName: _selectedPlant,
-      diseaseName: _diseaseController.text.trim(),
+      diseaseName: _selectedDiagnosis,
       createdAt: DateTime.now(),
       targetDate: _targetDate,
-      status: TreatmentStatus.belumDimulai,
-      priority: _selectedPriority,
-      notes: _notesController.text.trim(),
-      steps: _steps.asMap().entries.map((e) {
+      status: TreatmentStatus.sedangBerjalan,
+      priority: TreatmentPriority.sedang,
+      notes: '',
+      steps: selectedStepList.asMap().entries.map((e) {
         return TreatmentStep(
           id: '$planId-step-${e.key}',
           description: e.value,
@@ -435,8 +390,8 @@ class _AddTreatmentScreenState extends State<AddTreatmentScreen> {
     );
 
     provider.createPlan(newPlan);
-
     setState(() => _isSaving = false);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('✅ Rencana penanganan berhasil dibuat!'),
@@ -445,19 +400,4 @@ class _AddTreatmentScreenState extends State<AddTreatmentScreen> {
     );
     Navigator.pop(context);
   }
-
-  Color _getPriorityColor(TreatmentPriority priority) {
-    switch (priority) {
-      case TreatmentPriority.rendah:
-        return AppColors.textSecondary;
-      case TreatmentPriority.sedang:
-        return AppColors.warningOrange;
-      case TreatmentPriority.tinggi:
-        return const Color(0xFFE65100);
-      case TreatmentPriority.mendesak:
-        return AppColors.tomatoRed;
-    }
-  }
 }
-
-

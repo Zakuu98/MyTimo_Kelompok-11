@@ -18,7 +18,7 @@ extension TreatmentStatusExt on TreatmentStatus {
       case TreatmentStatus.belumDimulai:
         return 'Belum Dimulai';
       case TreatmentStatus.sedangBerjalan:
-        return 'Aktif';
+        return 'Berjalan';
       case TreatmentStatus.selesai:
         return 'Selesai';
       case TreatmentStatus.dibatalkan:
@@ -166,69 +166,55 @@ class TreatmentProgress {
 }
 
 // ===========================================================================
-// Dummy / Mock Data
+// Dummy / Mock Data — sesuai Figma MyTimo
 // ===========================================================================
 
 class TreatmentDummyData {
   TreatmentDummyData._();
 
   static List<TreatmentPlan> get samplePlans => [
+        // Plan 1 — Berjalan, 67% sesuai Figma
         TreatmentPlan(
           id: 'tp-001',
           plantName: 'Tomat Cherry Blok A',
-          diseaseName: 'Bercak Kering (Early Blight)',
+          diseaseName: 'Pemulihan Early Blight Daun Bawah',
           diagnosisId: 'diag-001',
           createdAt: DateTime.now().subtract(const Duration(days: 5)),
-          targetDate: DateTime.now().add(const Duration(days: 10)),
+          targetDate: DateTime(2026, 10, 8),
           status: TreatmentStatus.sedangBerjalan,
           priority: TreatmentPriority.tinggi,
-          notes:
-              'Tanaman menunjukkan gejala bercak coklat pada daun bawah. Perlu penanganan segera.',
+          notes: 'Gunakan masker saat semprot, pastikan daun kering.',
           steps: [
             TreatmentStep(
               id: 'step-001-1',
-              description:
-                  'Cabut dan buang daun yang terinfeksi parah dari tanaman',
+              description: 'Pangkas daun berpenyakit & bakar',
               isCompleted: true,
-              completedAt: DateTime.now().subtract(const Duration(days: 4)),
+              completedAt: DateTime(2026, 10, 8, 15, 30),
             ),
             TreatmentStep(
               id: 'step-001-2',
-              description:
-                  'Semprot fungisida berbahan aktif klorotalonil setiap 7 hari',
+              description: 'Semprot fungisida tembaga 2g/L',
               isCompleted: true,
-              completedAt: DateTime.now().subtract(const Duration(days: 2)),
+              completedAt: DateTime(2026, 10, 7, 8, 0),
             ),
             const TreatmentStep(
               id: 'step-001-3',
-              description:
-                  'Kurangi penyiraman dari atas, ganti dengan drip irrigation',
-              isCompleted: false,
-            ),
-            const TreatmentStep(
-              id: 'step-001-4',
-              description:
-                  'Tambahkan mulsa di sekitar tanaman untuk mencegah percikan tanah',
-              isCompleted: false,
-            ),
-            const TreatmentStep(
-              id: 'step-001-5',
-              description: 'Monitor perkembangan penyakit setiap 3 hari',
+              description: 'Pengecekan ulang & scan evaluasi',
               isCompleted: false,
             ),
           ],
         ),
+        // Plan 2 — Selesai 100%
         TreatmentPlan(
           id: 'tp-002',
           plantName: 'Tomat Mawar Bedeng 4',
-          diseaseName: 'Busuk Daun (Late Blight)',
+          diseaseName: 'Sanitasi & Fungisida Late Blight',
           diagnosisId: 'diag-003',
           createdAt: DateTime.now().subtract(const Duration(days: 15)),
-          targetDate: DateTime.now().subtract(const Duration(days: 2)),
+          targetDate: DateTime(2026, 10, 9),
           status: TreatmentStatus.selesai,
           priority: TreatmentPriority.mendesak,
-          notes:
-              'Penyakit menyebar cepat akibat cuaca lembab. Penanganan berhasil menghentikan penyebaran.',
+          notes: 'Penyakit menyebar cepat akibat cuaca lembab. Penanganan berhasil.',
           steps: [
             TreatmentStep(
               id: 'step-002-1',
@@ -248,35 +234,41 @@ class TreatmentDummyData {
               isCompleted: true,
               completedAt: DateTime.now().subtract(const Duration(days: 10)),
             ),
+            TreatmentStep(
+              id: 'step-002-4',
+              description: 'Monitor dan catat perkembangan harian',
+              isCompleted: true,
+              completedAt: DateTime.now().subtract(const Duration(days: 5)),
+            ),
           ],
         ),
+        // Plan 3 — Berjalan
         TreatmentPlan(
           id: 'tp-003',
-          plantName: 'Tomat Servo Bedeng 1',
-          diseaseName: 'Bercak Bakteri (Bacterial Spot)',
+          plantName: 'Tomat Sayur Blok C',
+          diseaseName: 'Pencegahan Rutin Spora Jamur',
           createdAt: DateTime.now().subtract(const Duration(days: 1)),
-          targetDate: DateTime.now().add(const Duration(days: 14)),
-          status: TreatmentStatus.belumDimulai,
+          targetDate: DateTime(2026, 10, 10),
+          status: TreatmentStatus.sedangBerjalan,
           priority: TreatmentPriority.rendah,
-          notes: 'Gejala masih awal, perlu pengamatan lebih lanjut.',
+          notes: 'Pencegahan rutin sebelum musim hujan.',
           steps: [
             const TreatmentStep(
               id: 'step-003-1',
-              description: 'Semprot bakterisida berbahan aktif tembaga',
+              description: 'Semprot fungisida preventif tembaga',
               isCompleted: false,
             ),
             const TreatmentStep(
               id: 'step-003-2',
-              description: 'Hindari penyiraman dari atas pada sore hari',
+              description: 'Rotasi tanaman & bersihkan lahan',
               isCompleted: false,
             ),
             const TreatmentStep(
               id: 'step-003-3',
-              description: 'Sterilkan alat pertanian sebelum digunakan',
+              description: 'Periksa kondisi mulsa plastik',
               isCompleted: false,
             ),
           ],
         ),
       ];
 }
-

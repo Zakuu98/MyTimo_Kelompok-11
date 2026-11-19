@@ -5,16 +5,30 @@ import '../../providers/treatment_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_sizes.dart';
 import '../../theme/app_text_styles.dart';
-import '../../widgets/app_button.dart';
-import '../../widgets/app_card.dart';
+import '../../widgets/mytimo_bottom_nav.dart';
 import 'edit_treatment_screen.dart';
 
-/// Screen 25: Tracking Progres Penanganan
+/// Screen 25: Progres Penanganan
 /// Anggota 3: Athaya Nasywa Mahira - 2411523028
 class TreatmentProgressScreen extends StatelessWidget {
   final String planId;
 
   const TreatmentProgressScreen({super.key, required this.planId});
+
+  String _formatDateTime(DateTime? d) {
+    if (d == null) return '';
+    final months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    final hour = d.hour.toString().padLeft(2, '0');
+    final minute = d.minute.toString().padLeft(2, '0');
+    return 'Selesai pada ${d.day} ${months[d.month]}, $hour:$minute';
+  }
+
+  String _formatDate(DateTime d) {
+    final months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    return '${d.day} ${months[d.month]} ${d.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,394 +37,334 @@ class TreatmentProgressScreen extends StatelessWidget {
         final plan = provider.getPlanById(planId);
         if (plan == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Progres Penanganan')),
+            appBar: AppBar(
+              title: const Text('Progres Penanganan'),
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+            ),
             body: const Center(child: Text('Rencana tidak ditemukan')),
           );
         }
+
+        final percent = (plan.progressPercent * 100).toInt();
 
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
             backgroundColor: AppColors.primaryGreen,
             foregroundColor: AppColors.textWhite,
+            elevation: 0,
             title: const Text(
               'Progres Penanganan',
               style: TextStyle(
-                  color: AppColors.textWhite,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700),
+                color: AppColors.textWhite,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             iconTheme: const IconThemeData(color: AppColors.textWhite),
-            elevation: 0,
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit_rounded),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChangeNotifierProvider.value(
-                        value: provider,
-                        child: EditTreatmentScreen(plan: plan),
-                      ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: provider,
+                      child: EditTreatmentScreen(plan: plan),
                     ),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded),
-                onPressed: () => _confirmDelete(context, provider),
+                  ),
+                ),
               ),
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSizes.p16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProgressHeader(plan),
-                const SizedBox(height: AppSizes.p16),
-                _buildInfoCard(plan),
-                const SizedBox(height: AppSizes.p16),
-                _buildStepsSection(context, plan, provider),
-                const SizedBox(height: AppSizes.p24),
-                if (plan.status != TreatmentStatus.selesai &&
-                    plan.status != TreatmentStatus.dibatalkan)
-                  AppButton(
-                    label: plan.completedSteps == plan.totalSteps
-                        ? '✓ Tandai Selesai'
-                        : 'Perbarui Progres',
-                    onPressed: () {
-                      if (plan.completedSteps == plan.totalSteps) {
-                        _markAllDone(context, provider, plan);
+                // Header Card - info progres
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  plan.diseaseName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${plan.plantName} • Target: ${_formatDate(plan.targetDate)}',
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Status badge
+                          _buildStatusBadge(plan.status),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      // Progress bar
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(100),
+                              child: LinearProgressIndicator(
+                                value: plan.progressPercent,
+                                backgroundColor: AppColors.border,
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    AppColors.primaryGreen),
+                                minHeight: 8,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '$percent% Selesai',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryGreen,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Kemajuan: ${plan.completedSteps} dari ${plan.totalSteps} selesai',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Checklist Section
+                const Text(
+                  'Checklist Tindakan Lapangan (Klik untuk update)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                ...plan.steps.map((step) {
+                  final isDone = step.isCompleted;
+                  final isOverdue = !isDone && DateTime.now().isAfter(plan.targetDate);
+
+                  return GestureDetector(
+                    onTap: () {
+                      if (plan.status != TreatmentStatus.selesai &&
+                          plan.status != TreatmentStatus.dibatalkan) {
+                        provider.updateStepStatus(plan.id, step.id, !isDone);
                       }
                     },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDone
+                              ? AppColors.primaryGreen.withOpacity(0.3)
+                              : isOverdue
+                                  ? AppColors.tomatoRed.withOpacity(0.3)
+                                  : AppColors.border,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Checkbox icon
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: isDone
+                                  ? AppColors.primaryGreen
+                                  : isOverdue
+                                      ? AppColors.tomatoRedLight
+                                      : AppColors.background,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDone
+                                    ? AppColors.primaryGreen
+                                    : isOverdue
+                                        ? AppColors.tomatoRed
+                                        : AppColors.border,
+                                width: 2,
+                              ),
+                            ),
+                            child: isDone
+                                ? const Icon(Icons.check, color: Colors.white, size: 16)
+                                : isOverdue
+                                    ? const Icon(Icons.close, color: AppColors.tomatoRed, size: 16)
+                                    : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  step.description,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: isDone
+                                        ? AppColors.textSecondary
+                                        : AppColors.textPrimary,
+                                    decoration: isDone
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
+                                ),
+                                if (isDone && step.completedAt != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '✓ ${_formatDateTime(step.completedAt)}',
+                                    style: const TextStyle(
+                                      color: AppColors.primaryGreen,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ] else if (isOverdue) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '✗ Target: ${_formatDate(plan.targetDate)} (Belum Dilakukan)',
+                                    style: const TextStyle(
+                                      color: AppColors.tomatoRed,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+
+                const SizedBox(height: 20),
+
+                // Tombol Simpan Progres
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✅ Progres tindakan berhasil disimpan!'),
+                          backgroundColor: AppColors.primaryGreen,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
+                    label: const Text(
+                      'Simpan Progres Tindakan',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
-                const SizedBox(height: AppSizes.p12),
-                if (plan.status != TreatmentStatus.dibatalkan &&
-                    plan.status != TreatmentStatus.selesai)
-                  AppButton(
-                    label: 'Batalkan Rencana',
-                    variant: AppButtonVariant.danger,
-                    onPressed: () => _cancelPlan(context, provider, plan),
-                  ),
-                const SizedBox(height: AppSizes.p24),
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
+          bottomNavigationBar: const MyTimoBottomNav(activeIndex: 1),
         );
       },
     );
   }
 
-  Widget _buildProgressHeader(TreatmentPlan plan) {
-    final percent = (plan.progressPercent * 100).toInt();
-    return AppCard(
-      padding: const EdgeInsets.all(AppSizes.p20),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(plan.plantName, style: AppTextStyles.heading3),
-                    const SizedBox(height: AppSizes.p4),
-                    Text(plan.diseaseName, style: AppTextStyles.bodyMuted),
-                  ],
-                ),
-              ),
-              _buildStatusChip(plan),
-            ],
-          ),
-          const SizedBox(height: AppSizes.p20),
-          Row(
-            children: [
-              SizedBox(
-                width: 90,
-                height: 90,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 90,
-                      height: 90,
-                      child: CircularProgressIndicator(
-                        value: plan.progressPercent,
-                        strokeWidth: 8,
-                        backgroundColor: AppColors.border,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          plan.status == TreatmentStatus.selesai
-                              ? AppColors.primaryGreen
-                              : AppColors.primaryGreenLight,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '$percent%',
-                      style: AppTextStyles.metricValue.copyWith(fontSize: 20),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSizes.p20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${plan.completedSteps} dari ${plan.totalSteps} langkah',
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                    const SizedBox(height: AppSizes.p6),
-                    ClipRRect(
-                      borderRadius: AppSizes.roundedFull,
-                      child: LinearProgressIndicator(
-                        value: plan.progressPercent,
-                        backgroundColor: AppColors.border,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primaryGreen,
-                        ),
-                        minHeight: 8,
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.p8),
-                    if (plan.isOverdue)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSizes.p10, vertical: AppSizes.p4),
-                        decoration: BoxDecoration(
-                          color: AppColors.tomatoRedLight,
-                          borderRadius: AppSizes.roundedFull,
-                        ),
-                        child: Text(
-                          '⚠️ Terlambat dari target',
-                          style: AppTextStyles.badgeText
-                              .copyWith(color: AppColors.tomatoRed),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(TreatmentPlan plan) {
+  Widget _buildStatusBadge(TreatmentStatus status) {
     Color color;
-    switch (plan.status) {
+    String label;
+    switch (status) {
       case TreatmentStatus.sedangBerjalan:
         color = AppColors.primaryGreen;
+        label = 'Berjalan';
         break;
       case TreatmentStatus.selesai:
         color = const Color(0xFF1565C0);
+        label = 'Selesai';
         break;
       case TreatmentStatus.dibatalkan:
         color = AppColors.textMuted;
+        label = 'Dibatalkan';
         break;
       case TreatmentStatus.belumDimulai:
         color = AppColors.warningOrange;
+        label = 'Belum Mulai';
         break;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.p12, vertical: AppSizes.p6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: AppSizes.roundedFull,
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        plan.status.label,
-        style: AppTextStyles.badgeText.copyWith(color: color),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(TreatmentPlan plan) {
-    final months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
-    ];
-
-    String formatDate(DateTime d) =>
-        '${d.day} ${months[d.month]} ${d.year}';
-
-    return AppCard(
-      child: Column(
-        children: [
-          _infoRow(Icons.calendar_today_rounded, 'Dibuat',
-              formatDate(plan.createdAt)),
-          const Divider(height: AppSizes.p20),
-          _infoRow(Icons.flag_rounded, 'Target Selesai',
-              formatDate(plan.targetDate)),
-          const Divider(height: AppSizes.p20),
-          _infoRow(Icons.priority_high_rounded, 'Prioritas',
-              plan.priority.label),
-          if (plan.notes.isNotEmpty) ...[
-            const Divider(height: AppSizes.p20),
-            _infoRow(Icons.notes_rounded, 'Catatan', plan.notes),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: AppColors.primaryGreen),
-        const SizedBox(width: AppSizes.p10),
-        SizedBox(
-          width: 90,
-          child: Text(label, style: AppTextStyles.bodyMuted),
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
         ),
-        Expanded(child: Text(value, style: AppTextStyles.bodyMedium)),
-      ],
-    );
-  }
-
-  Widget _buildStepsSection(
-      BuildContext context, TreatmentPlan plan, TreatmentProvider provider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Langkah Tindakan', style: AppTextStyles.sectionTitle),
-        const SizedBox(height: AppSizes.p12),
-        ...plan.steps.map((step) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSizes.p8),
-            child: AppCard(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.p16, vertical: AppSizes.p12),
-              backgroundColor: step.isCompleted
-                  ? AppColors.greenBadgeBackground
-                  : AppColors.surface,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Checkbox(
-                    value: step.isCompleted,
-                    onChanged: plan.status == TreatmentStatus.selesai ||
-                            plan.status == TreatmentStatus.dibatalkan
-                        ? null
-                        : (val) {
-                            provider.updateStepStatus(
-                                plan.id, step.id, val ?? false);
-                          },
-                    activeColor: AppColors.primaryGreen,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4)),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: AppSizes.p10),
-                      child: Text(
-                        step.description,
-                        style: step.isCompleted
-                            ? AppTextStyles.body.copyWith(
-                                decoration: TextDecoration.lineThrough,
-                                color: AppColors.textMuted,
-                              )
-                            : AppTextStyles.body,
-                      ),
-                    ),
-                  ),
-                  if (step.isCompleted)
-                    const Padding(
-                      padding: EdgeInsets.only(top: AppSizes.p10),
-                      child: Icon(Icons.check_circle_rounded,
-                          size: 18, color: AppColors.primaryGreen),
-                    ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  void _markAllDone(BuildContext context, TreatmentProvider provider,
-      TreatmentPlan plan) {
-    for (final step in plan.steps) {
-      if (!step.isCompleted) {
-        provider.updateStepStatus(plan.id, step.id, true);
-      }
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✅ Rencana penanganan telah selesai!'),
-        backgroundColor: AppColors.primaryGreen,
-      ),
-    );
-  }
-
-  void _cancelPlan(BuildContext context, TreatmentProvider provider,
-      TreatmentPlan plan) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Batalkan Rencana?'),
-        content:
-            const Text('Rencana penanganan akan ditandai sebagai dibatalkan.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tidak'),
-          ),
-          TextButton(
-            onPressed: () {
-              provider.updatePlan(
-                  plan.copyWith(status: TreatmentStatus.dibatalkan));
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Rencana telah dibatalkan')),
-              );
-            },
-            child: const Text('Ya, Batalkan',
-                style: TextStyle(color: AppColors.tomatoRed)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, TreatmentProvider provider) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Hapus Rencana?'),
-        content: const Text(
-            'Rencana penanganan ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () {
-              provider.deletePlan(planId);
-              Navigator.pop(context); // close dialog
-              Navigator.pop(context); // back to list
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Rencana berhasil dihapus'),
-                  backgroundColor: AppColors.tomatoRed,
-                ),
-              );
-            },
-            child: const Text('Hapus',
-                style: TextStyle(color: AppColors.tomatoRed)),
-          ),
-        ],
       ),
     );
   }
 }
-

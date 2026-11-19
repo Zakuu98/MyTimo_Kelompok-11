@@ -7,6 +7,7 @@ import '../../theme/app_sizes.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/mytimo_bottom_nav.dart';
 import 'add_treatment_screen.dart';
 import 'treatment_progress_screen.dart';
 
@@ -66,6 +67,7 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
         },
         child: const Icon(Icons.add_rounded, color: AppColors.textWhite),
       ),
+      bottomNavigationBar: const MyTimoBottomNav(activeIndex: 1),
     );
   }
 
@@ -104,39 +106,53 @@ class _TreatmentPlanScreenState extends State<TreatmentPlanScreen> {
   }
 
   Widget _buildTabFilter() {
-    final tabs = ['Semua', 'Aktif', 'Selesai'];
-    return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.p16, vertical: AppSizes.p10),
-      child: Row(
-        children: tabs.asMap().entries.map((entry) {
-          final isSelected = _selectedTab == entry.key;
-          return Padding(
-            padding: const EdgeInsets.only(right: AppSizes.p8),
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedTab = entry.key),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.p16, vertical: AppSizes.p8),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryGreen : AppColors.background,
-                  borderRadius: AppSizes.roundedFull,
-                  border: Border.all(
-                    color: isSelected ? AppColors.primaryGreen : AppColors.border,
+    return Consumer<TreatmentProvider>(
+      builder: (context, provider, _) {
+        final semua = provider.plans.length;
+        final berjalan = provider.activePlans.length;
+        final selesai = provider.completedPlans.length;
+        final tabs = [
+          ('Semua', semua),
+          ('Berjalan', berjalan),
+          ('Selesai', selesai),
+        ];
+        return Container(
+          color: AppColors.surface,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.p16, vertical: AppSizes.p10),
+          child: Row(
+            children: tabs.asMap().entries.map((entry) {
+              final isSelected = _selectedTab == entry.key;
+              final label = entry.value.$1;
+              final count = entry.value.$2;
+              return Padding(
+                padding: const EdgeInsets.only(right: AppSizes.p8),
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedTab = entry.key),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.p14, vertical: AppSizes.p8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primaryGreen : AppColors.background,
+                      borderRadius: AppSizes.roundedFull,
+                      border: Border.all(
+                        color: isSelected ? AppColors.primaryGreen : AppColors.border,
+                      ),
+                    ),
+                    child: Text(
+                      '$label ($count)',
+                      style: AppTextStyles.badgeText.copyWith(
+                        color: isSelected ? AppColors.textWhite : AppColors.textSecondary,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-                child: Text(
-                  entry.value,
-                  style: AppTextStyles.badgeText.copyWith(
-                    color: isSelected ? AppColors.textWhite : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
