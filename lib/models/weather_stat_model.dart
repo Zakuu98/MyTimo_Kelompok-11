@@ -20,6 +20,10 @@ class WeatherStatModel {
     required this.activeThreatCount,
   });
 
+  /// Jumlah tanaman/deteksi sehat
+  int get healthyDetections =>
+      (totalDetections - activeThreatCount).clamp(0, totalDetections);
+
   WeatherStatModel copyWith({
     String? location,
     String? temperature,

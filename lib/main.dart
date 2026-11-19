@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'models/plant_model.dart';
 import 'providers/auth_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/plant_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/landing/landing_screen.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/plant_list/add_plant_screen.dart';
+import 'screens/plant_list/edit_plant_screen.dart';
+import 'screens/plant_list/plant_detail_screen.dart';
 import 'theme/app_colors.dart';
 
 void main() {
@@ -32,6 +37,7 @@ class MyTimoApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => PlantProvider()),
       ],
       child: MaterialApp(
         title: 'MyTimo',
@@ -62,6 +68,26 @@ class MyTimoApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const MainNavigationScreen(),
+          '/add-plant': (context) => const AddPlantScreen(),
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name == '/plant-detail') {
+            final plant = settings.arguments as PlantModel?;
+            if (plant != null) {
+              return MaterialPageRoute(
+                builder: (context) => PlantDetailScreen(plant: plant),
+              );
+            }
+          }
+          if (settings.name == '/edit-plant') {
+            final plant = settings.arguments as PlantModel?;
+            if (plant != null) {
+              return MaterialPageRoute(
+                builder: (context) => EditPlantScreen(plant: plant),
+              );
+            }
+          }
+          return null;
         },
       ),
     );

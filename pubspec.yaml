@@ -22,3 +22,5 @@ flutter:
     - assets/images/
     - assets/images/2.0x/
     - assets/images/3.0x/
+    - assets/custom_assets/icons/
+    - assets/custom_assets/images/

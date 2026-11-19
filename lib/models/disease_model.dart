@@ -20,6 +20,12 @@ class DiseaseModel {
     required this.imagePath,
   });
 
+  /// Alias getter untuk kompatibilitas nama penyakit
+  String get name => localName;
+
+  /// Alias getter untuk nama latin/ilmiah
+  String get latinName => scientificName;
+
   factory DiseaseModel.fromJson(Map<String, dynamic> json) {
     return DiseaseModel(
       id: json['id'] as String,

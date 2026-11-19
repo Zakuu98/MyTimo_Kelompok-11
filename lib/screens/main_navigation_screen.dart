@@ -4,8 +4,12 @@ import '../providers/navigation_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_sizes.dart';
 import 'home/home_screen.dart';
+import 'plant_list/plant_list_screen.dart';
+import 'scan/camera_scan_screen.dart';
+import 'scan/scan_history_screen.dart';
 
-/// Main Navigation Screen with custom Bottom Navigation Bar and elevated Center Scan Button
+/// Main Navigation Screen dengan custom Bottom Navigation Bar sesuai Desain Figma Frame: home
+/// 5 Tab: Beranda, Tanaman, Pindai (Center Elevated FAB), Riwayat, Monitor
 class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
 
@@ -13,119 +17,156 @@ class MainNavigationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<NavigationProvider>(
       builder: (context, nav, _) {
+        final bottomInset = MediaQuery.of(context).padding.bottom;
+
         return Scaffold(
+          backgroundColor: AppColors.homeBackground,
           body: IndexedStack(
             index: nav.currentIndex,
             children: const [
               HomeScreen(),
+              PlantListScreen(),
+              // Dummy slot for center FAB if ever indexed
+              HomeScreen(),
+              ScanHistoryScreen(isEmbeddedInNav: true),
               _PlaceholderTab(
-                title: 'Kamus Penyakit',
-                subtitle: 'Daftar lengkap gejala dan penanganan penyakit tomat.',
-                icon: Icons.menu_book_rounded,
-              ),
-              _PlaceholderTab(
-                title: 'Pemindaian Kamera (FR-02)',
-                subtitle: 'Mode inferensi AI On-Device (TFLite) 100% offline.',
-                icon: Icons.camera_alt_rounded,
-              ),
-              _PlaceholderTab(
-                title: 'Riwayat Pemindaian',
-                subtitle: 'Arsip log deteksi tersimpan lokal di perangkat.',
-                icon: Icons.history_rounded,
-              ),
-              _PlaceholderTab(
-                title: 'Profil Petani',
-                subtitle: 'Pengaturan akun dan preferensi lahan pertanian.',
-                icon: Icons.person_rounded,
+                title: 'Monitoring Kesehatan',
+                subtitle: 'Grafik tren kesehatan kebun dan jadwal perawatan.',
+                iconAsset: 'assets/custom_assets/icons/ic_activity.png',
+                fallbackIcon: Icons.show_chart_rounded,
               ),
             ],
           ),
-          bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 16,
-                  offset: Offset(0, -4),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
-              child: SizedBox(
-                height: 64,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    // Tab 1: Beranda
-                    _buildNavItem(
-                      context,
-                      index: 0,
-                      label: 'Beranda',
-                      icon: Icons.home_rounded,
-                      isActive: nav.currentIndex == 0,
-                      onTap: () => nav.setIndex(0),
-                    ),
-
-                    // Tab 2: Kamus
-                    _buildNavItem(
-                      context,
-                      index: 1,
-                      label: 'Kamus',
-                      icon: Icons.menu_book_rounded,
-                      isActive: nav.currentIndex == 1,
-                      onTap: () => nav.setIndex(1),
-                    ),
-
-                    // Tab 3: Center Elevated Scan Button
-                    GestureDetector(
-                      onTap: () => _openScanner(context),
-                      child: Container(
-                        width: AppSizes.floatingScanButtonSize,
-                        height: AppSizes.floatingScanButtonSize,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.floatingScanGradient,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.tomatoRed.withValues(alpha: 0.4),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.crop_free_rounded,
-                          color: AppColors.textWhite,
-                          size: 28,
+          bottomNavigationBar: SizedBox(
+            height: 86 + (bottomInset > 0 ? bottomInset - 10 : 0),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                // Bottom Bar Background
+                Container(
+                  height: 68 + bottomInset,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x14000000), // rgba(0, 0, 0, 0.08)
+                        blurRadius: 12,
+                        offset: Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.only(bottom: bottomInset),
+                  child: Row(
+                    children: [
+                      // Tab 0: Beranda
+                      Expanded(
+                        child: _buildNavTab(
+                          label: 'Beranda',
+                          iconAsset: 'assets/custom_assets/icons/ic_home.png',
+                          fallbackIcon: Icons.home_rounded,
+                          isActive: nav.currentIndex == 0,
+                          onTap: () => nav.setIndex(0),
                         ),
                       ),
-                    ),
 
-                    // Tab 4: Riwayat
-                    _buildNavItem(
-                      context,
-                      index: 3,
-                      label: 'Riwayat',
-                      icon: Icons.history_rounded,
-                      isActive: nav.currentIndex == 3,
-                      onTap: () => nav.setIndex(3),
-                    ),
+                      // Tab 1: Tanaman
+                      Expanded(
+                        child: _buildNavTab(
+                          label: 'Tanaman',
+                          iconAsset: 'assets/custom_assets/icons/ic_sprout.png',
+                          fallbackIcon: Icons.eco_outlined,
+                          isActive: nav.currentIndex == 1,
+                          onTap: () => nav.setIndex(1),
+                        ),
+                      ),
 
-                    // Tab 5: Profil
-                    _buildNavItem(
-                      context,
-                      index: 4,
-                      label: 'Profil',
-                      icon: Icons.person_outline_rounded,
-                      isActive: nav.currentIndex == 4,
-                      onTap: () => nav.setIndex(4),
-                    ),
-                  ],
+                      // Space for Center FAB (width ~ 72)
+                      const SizedBox(width: 76),
+
+                      // Tab 3: Riwayat
+                      Expanded(
+                        child: _buildNavTab(
+                          label: 'Riwayat',
+                          iconAsset: 'assets/custom_assets/icons/ic_clock.png',
+                          fallbackIcon: Icons.history_rounded,
+                          isActive: nav.currentIndex == 3,
+                          onTap: () => nav.setIndex(3),
+                        ),
+                      ),
+
+                      // Tab 4: Monitor
+                      Expanded(
+                        child: _buildNavTab(
+                          label: 'Monitor',
+                          iconAsset: 'assets/custom_assets/icons/ic_activity.png',
+                          fallbackIcon: Icons.show_chart_rounded,
+                          isActive: nav.currentIndex == 4,
+                          onTap: () => nav.setIndex(4),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+
+                // Center Elevated Floating Action Button (FAB)
+                Positioned(
+                  top: 0,
+                  child: GestureDetector(
+                    onTap: () => _openScanner(context),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // White Ring (72x72)
+                        Container(
+                          width: 66,
+                          height: 66,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.18),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            // Gradient Circle (54x54)
+                            child: Container(
+                              width: 52,
+                              height: 52,
+                              decoration: const BoxDecoration(
+                                gradient: AppColors.homeFabGradient,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.crop_free_rounded,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        // Label "Pindai"
+                        const Text(
+                          'Pindai',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.homeFabScanText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -133,38 +174,47 @@ class MainNavigationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(
-    BuildContext context, {
-    required int index,
+  Widget _buildNavTab({
     required String label,
-    required IconData icon,
+    required String iconAsset,
+    required IconData fallbackIcon,
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    final color = isActive ? AppColors.primaryGreen : AppColors.textMuted;
+    final color = isActive ? AppColors.homeNavActive : AppColors.homeNavInactive;
 
     return InkWell(
       onTap: onTap,
-      splashColor: AppColors.primaryGreenSoft.withValues(alpha: 0.3),
+      splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 3),
-            Text(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            iconAsset,
+            width: 24,
+            height: 24,
+            color: color,
+            errorBuilder: (context, error, stackTrace) => Icon(
+              fallbackIcon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
               label,
               style: TextStyle(
+                fontFamily: 'Inter',
                 fontSize: 11.0,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: FontWeight.w700,
                 color: color,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -199,18 +249,32 @@ class MainNavigationScreen extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.tomatoRedLight,
-                        borderRadius: AppSizes.roundedM,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFE3E0),
+                        shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.crop_free_rounded, color: AppColors.tomatoRed),
+                      child: const Icon(Icons.crop_free_rounded, color: AppColors.homeBannerBtnText),
                     ),
                     const SizedBox(width: AppSizes.p12),
                     const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Pemindaian Daun Tomat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text('Inferensi AI On-Device Offline', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(
+                          'Pemindaian Daun Tomat',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Deteksi Hama & Jamur Instan (Offline AI)',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -229,8 +293,11 @@ class MainNavigationScreen extends StatelessWidget {
                   subtitle: const Text('Arahkan kamera ke daun bergejala penyakit', style: TextStyle(fontSize: 12)),
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Membuka modul kamera TFLite (FR-02 & FR-03)...')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CameraScanScreen(),
+                      ),
                     );
                   },
                 ),
@@ -265,21 +332,30 @@ class MainNavigationScreen extends StatelessWidget {
 class _PlaceholderTab extends StatelessWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
+  final String? iconAsset;
+  final IconData fallbackIcon;
 
   const _PlaceholderTab({
     required this.title,
     required this.subtitle,
-    required this.icon,
+    this.iconAsset,
+    required this.fallbackIcon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.homeBackground,
       appBar: AppBar(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: AppColors.surface,
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0.5,
         foregroundColor: AppColors.textPrimary,
       ),
@@ -290,23 +366,54 @@ class _PlaceholderTab extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreenSoft,
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFE7FDDD), Color(0xFFC5F3C1)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 56, color: AppColors.primaryGreen),
+                child: Center(
+                  child: iconAsset != null
+                      ? Image.asset(
+                          iconAsset!,
+                          width: 38,
+                          height: 38,
+                          color: const Color(0xFF178401),
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            fallbackIcon,
+                            size: 38,
+                            color: const Color(0xFF178401),
+                          ),
+                        )
+                      : Icon(
+                          fallbackIcon,
+                          size: 38,
+                          color: const Color(0xFF178401),
+                        ),
+                ),
               ),
               const SizedBox(height: 20),
               Text(
                 title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),

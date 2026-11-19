@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_sizes.dart';
-import '../../theme/app_text_styles.dart';
-import '../../widgets/app_button.dart';
+import '../../widgets/app_snackbar.dart';
+import '../../widgets/app_success_dialog.dart';
 import '../../widgets/app_text_field.dart';
 import '../main_navigation_screen.dart';
 import 'login_screen.dart';
 
-/// Register Screen MyTimo sesuai Frame 3 Figma
+/// Register Screen MyTimo sesuai Desain Figma (Frame: sign_up)
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -22,6 +22,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _isPasswordObscured = true;
 
   @override
   void dispose() {
@@ -42,226 +44,463 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (success && mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-        (route) => false,
+      final userName = _nameController.text.trim().isNotEmpty
+          ? _nameController.text.trim()
+          : (authProvider.currentUser?.name ?? 'Petani');
+      await AppSuccessDialog.show(
+        context: context,
+        title: 'Pendaftaran Berhasil!',
+        message: 'Akun Anda berhasil didaftarkan, $userName. Membuka beranda...',
+        onContinue: () {
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+              (route) => false,
+            );
+          }
+        },
       );
+    } else if (mounted && authProvider.errorMessage != null) {
+      AppSnackBar.showError(context, authProvider.errorMessage!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
-          ),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
-      body: SafeArea(
-        child: Stack(
+      child: Scaffold(
+        backgroundColor: AppColors.signUpBackground,
+        body: Stack(
           children: [
-            // Glowing warm accent at top center
+            // 1. Header Gradient & Image (Height: 330px per Figma)
             Positioned(
-              top: -40,
+              top: 0,
               left: 0,
               right: 0,
-              child: Center(
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.tomatoRed.withValues(alpha: 0.35),
-                        blurRadius: 80,
-                        spreadRadius: 30,
-                      ),
-                    ],
+              height: 330,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/custom_assets/images/jamur_septoria.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(color: const Color(0xFF08330D));
+                    },
                   ),
-                ),
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: AppColors.signUpHeaderGradient,
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            // Main Content
-            SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.p24,
-                vertical: AppSizes.p8,
-              ),
-              child: Form(
-                key: _formKey,
+            // 2. Scrollable Content (Header items + White Panel)
+            SafeArea(
+              top: false,
+              bottom: true,
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: AppSizes.p16),
-                    // Title
-                    RichText(
-                      text: const TextSpan(
-                        style: AppTextStyles.heading2,
-                        children: [
-                          TextSpan(text: 'Daftar Akun '),
-                          TextSpan(
-                            text: 'MyTimo',
-                            style: TextStyle(color: AppColors.tomatoRed),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.p6),
-                    // Subtitle
-                    const Text(
-                      'Pantau Kesehatan Tanaman Kamu',
-                      style: AppTextStyles.subtitle,
-                    ),
+                    // Header Content Area
+                    SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 8),
 
-                    const SizedBox(height: AppSizes.p28),
-
-                    // Name Input
-                    AppTextField(
-                      label: 'Nama',
-                      hintText: 'Nama',
-                      controller: _nameController,
-                      prefixIcon: Icons.person_outline_rounded,
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Nama tidak boleh kosong';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: AppSizes.p18),
-
-                    // Email Input
-                    AppTextField(
-                      label: 'Email',
-                      hintText: 'Email',
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.mail_outline_rounded,
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Email tidak boleh kosong';
-                        }
-                        if (!val.contains('@')) {
-                          return 'Format email tidak valid';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: AppSizes.p18),
-
-                    // Password Input with Visibility Toggle
-                    Consumer<AuthProvider>(
-                      builder: (context, auth, _) {
-                        return AppTextField(
-                          label: 'Kata Sandi',
-                          hintText: 'Kata Sandi',
-                          controller: _passwordController,
-                          obscureText: auth.isPasswordObscured,
-                          prefixIcon: Icons.lock_outline_rounded,
-                          textInputAction: TextInputAction.done,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              auth.isPasswordObscured
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: AppColors.textMuted,
-                              size: AppSizes.iconSizeMedium,
+                            // Back Button (40x40 circle with rgba(255, 255, 255, 0.2))
+                            Row(
+                              children: [
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(20),
+                                    onTap: () => Navigator.of(context).maybePop(),
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0x33FFFFFF), // rgba(255, 255, 255, 0.2)
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_back_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            onPressed: auth.togglePasswordVisibility,
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Kata sandi tidak boleh kosong';
-                            }
-                            if (val.length < 6) {
-                              return 'Kata sandi minimal 6 karakter';
-                            }
-                            return null;
-                          },
-                        );
-                      },
-                    ),
 
-                    // Error Message
-                    Consumer<AuthProvider>(
-                      builder: (context, auth, _) {
-                        if (auth.errorMessage != null) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: AppSizes.p12),
-                            child: Text(
-                              auth.errorMessage!,
-                              style: const TextStyle(
-                                color: AppColors.tomatoRed,
-                                fontSize: 13.0,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(height: 12),
+
+                            // Logo Squircle (68x68, radius 20, gradient #DF4B2C -> #E89746, shadow)
+                            Container(
+                              width: 68,
+                              height: 68,
+                              decoration: BoxDecoration(
+                                gradient: AppColors.landingLogoGradient,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF002600).withValues(alpha: 0.30),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
                               ),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-
-                    const SizedBox(height: AppSizes.p32),
-
-                    // Tombol Daftar
-                    Consumer<AuthProvider>(
-                      builder: (context, auth, _) {
-                        return AppButton(
-                          label: 'Daftar',
-                          isLoading: auth.isLoading,
-                          borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                          onPressed: _handleRegister,
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: AppSizes.p24),
-
-                    // Footer Link: Sudah punya akun? Masuk
-                    Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                          );
-                        },
-                        child: RichText(
-                          text: const TextSpan(
-                            style: TextStyle(
-                              fontSize: 14.0,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                            children: [
-                              TextSpan(text: 'Sudah punya akun? '),
-                              TextSpan(
-                                text: 'Masuk',
-                                style: TextStyle(
-                                  color: AppColors.tomatoRed,
-                                  fontWeight: FontWeight.w700,
+                              child: Center(
+                                child: Image.asset(
+                                  'assets/custom_assets/icons/ic_scan_landing.png',
+                                  width: 36,
+                                  height: 36,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.crop_free_rounded,
+                                      size: 32,
+                                      color: Colors.white,
+                                    );
+                                  },
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            // Title: Daftar Akun MyTimo (Poppins bold 24px)
+                            const Text(
+                              'Daftar Akun MyTimo',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                height: 1.3,
+                              ),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            // Subtitle: Pantau Kesehatan Tanaman Kamu (Inter 13px)
+                            Text(
+                              'Pantau Kesehatan Tanaman Kamu',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white.withValues(alpha: 0.90),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+                          ],
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: AppSizes.p20),
+                    // White Rounded Panel (Top radius 32, shadow)
+                    Container(
+                      width: double.infinity,
+                      constraints: BoxConstraints(
+                        minHeight: screenHeight > 600 ? screenHeight - 270 : 500,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF002600).withValues(alpha: 0.12),
+                            blurRadius: 16,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 1. Nama Input
+                            AppTextField(
+                              label: 'Nama',
+                              hintText: 'Nama lengkap',
+                              controller: _nameController,
+                              prefixIcon: Icons.person_outline_rounded,
+                              prefixIconSize: 18,
+                              prefixIconColor: AppColors.signUpTextGray,
+                              borderColor: AppColors.signUpInputBorder,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0D002600),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
+                              hintStyle: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.signUpTextGray,
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Nama tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // 2. Email Input (Validation: must use @gmail.com)
+                            AppTextField(
+                              label: 'Email',
+                              hintText: 'nama@email.com',
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              prefixIcon: Icons.mail_outline_rounded,
+                              prefixIconSize: 18,
+                              prefixIconColor: AppColors.signUpTextGray,
+                              borderColor: AppColors.signUpInputBorder,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0D002600),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
+                              hintStyle: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.signUpTextGray,
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Email tidak boleh kosong';
+                                }
+                                final trimmed = val.trim().toLowerCase();
+                                if (!trimmed.endsWith('@gmail.com') || trimmed == '@gmail.com') {
+                                  return 'Email harus menggunakan @gmail.com';
+                                }
+                                final username = trimmed.substring(0, trimmed.length - '@gmail.com'.length);
+                                if (username.contains(' ') || username.isEmpty) {
+                                  return 'Format email tidak valid';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // 3. Kata Sandi Input (Validation: min 8 char, uppercase, lowercase, symbol + eye toggle)
+                            AppTextField(
+                              label: 'Kata Sandi',
+                              hintText: '••••••••',
+                              controller: _passwordController,
+                              obscureText: _isPasswordObscured,
+                              prefixIcon: Icons.lock_outline_rounded,
+                              prefixIconSize: 18,
+                              prefixIconColor: AppColors.signUpTextGray,
+                              borderColor: AppColors.signUpInputBorder,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0D002600),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
+                              hintStyle: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.signUpTextGray,
+                              ),
+                              textInputAction: TextInputAction.done,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordObscured
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: AppColors.signUpTextGray,
+                                  size: 18,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isPasswordObscured = !_isPasswordObscured;
+                                  });
+                                },
+                              ),
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return 'Kata sandi tidak boleh kosong';
+                                }
+                                if (val.length < 8) {
+                                  return 'Kata sandi minimal 8 karakter';
+                                }
+                                if (!RegExp(r'[A-Z]').hasMatch(val)) {
+                                  return 'Harus mengandung minimal 1 huruf besar (A-Z)';
+                                }
+                                if (!RegExp(r'[a-z]').hasMatch(val)) {
+                                  return 'Harus mengandung minimal 1 huruf kecil (a-z)';
+                                }
+                                if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-+=\[\]\\/`~]').hasMatch(val)) {
+                                  return 'Harus mengandung minimal 1 simbol (!@#\$%...)';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            // Error Message from AuthProvider
+                            Consumer<AuthProvider>(
+                              builder: (context, auth, _) {
+                                if (auth.errorMessage != null) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 12.0),
+                                    child: Text(
+                                      auth.errorMessage!,
+                                      style: const TextStyle(
+                                        color: AppColors.tomatoRed,
+                                        fontSize: 13.0,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // Tombol Daftar (Gradient #389D33 -> #178401, radius 20, shadow)
+                            Consumer<AuthProvider>(
+                              builder: (context, auth, _) {
+                                return Container(
+                                  width: double.infinity,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.signUpButtonGradient,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF002600).withValues(alpha: 0.22),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(20),
+                                      onTap: auth.isLoading ? null : _handleRegister,
+                                      child: Center(
+                                        child: auth.isLoading
+                                            ? const SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child: CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                  strokeWidth: 2.5,
+                                                ),
+                                              )
+                                            : const Text(
+                                                'Daftar',
+                                                style: TextStyle(
+                                                  fontFamily: 'Inter',
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Footer: Sudah punya akun? Masuk
+                            Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Text.rich(
+                                  TextSpan(
+                                    style: const TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 13.0,
+                                      fontWeight: FontWeight.w400,
+                                      color: AppColors.signUpTextGray,
+                                    ),
+                                    children: [
+                                      const TextSpan(text: 'Sudah punya akun? '),
+                                      TextSpan(
+                                        text: 'Masuk',
+                                        style: const TextStyle(
+                                          color: AppColors.signUpInputBorder, // #DF4B2C
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

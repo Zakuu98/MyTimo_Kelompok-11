@@ -130,4 +130,35 @@ class AppTextStyles {
     fontSize: 12.0,
     fontWeight: FontWeight.w600,
   );
+
+  // Landing Page Design Styles (Figma Frame 1)
+  static const TextStyle landingTitle = TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 36.0,
+    fontWeight: FontWeight.w700,
+    color: Colors.white,
+    height: 1.5,
+  );
+
+  static const TextStyle landingSubtitle = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 15.0,
+    fontWeight: FontWeight.w400,
+    color: Color(0xEBFFFFFF), // rgba(255, 255, 255, 0.92)
+    height: 1.47, // 22 / 15
+  );
+
+  static const TextStyle landingButtonPrimary = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 16.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.landingGreen,
+  );
+
+  static const TextStyle landingButtonSecondary = TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 15.0,
+    fontWeight: FontWeight.w700,
+    color: Colors.white,
+  );
 }

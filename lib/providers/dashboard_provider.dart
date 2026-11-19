@@ -11,12 +11,31 @@ class DashboardProvider extends ChangeNotifier {
     humidity: '76%',
     humidityAlertTitle: 'Kelembapan Tinggi 76% AI',
     humidityBadgeText: 'Waspada Jamur!',
-    totalDetections: 24,
-    healthyPercentage: 88,
+    totalDetections: 12,
+    healthyPercentage: 75,
     activeThreatCount: 3,
   );
 
   final List<DiseaseModel> _diseases = [
+    const DiseaseModel(
+      id: 'early_blight',
+      localName: 'Early Blight',
+      scientificName: 'Alternaria solani',
+      category: 'Jamur',
+      description:
+          'Bercak cincin konsentris coklat kehitaman pada daun bagian bawah tanaman tomat. Menyebabkan daun mengering dan gugur sebelum panen.',
+      treatmentSteps: [
+        'Pangkas daun yang terinfeksi dan buang jauh dari area kebun.',
+        'Semprotkan fungisida kontak berbahan aktif Mankozeb 2-3 g/L.',
+        'Atur jarak tanam agar sirkulasi udara lebih lancar.',
+      ],
+      preventionSteps: [
+        'Lakukan rotasi tanaman non-Solanaceae minimal 2 musim.',
+        'Gunakan mulsa plastik perak untuk menekan percikan air tanah.',
+        'Hindari penyiraman daun secara langsung (overhead watering).',
+      ],
+      imagePath: 'assets/images/hero_tomatoes.webp',
+    ),
     const DiseaseModel(
       id: 'dis_01',
       localName: 'Late Blight',

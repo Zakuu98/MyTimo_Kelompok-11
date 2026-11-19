@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../theme/app_colors.dart';
-import '../../../theme/app_sizes.dart';
-import '../../../theme/app_text_styles.dart';
 
-/// Baris 3 metrik statistik dashboard (Total Deteksi, Tanaman Sehat, Terkena Hama/Penyakit)
+/// Baris 3 kartu statistik kebun sesuai Desain Figma Frame: home
+/// (Total Tanaman, Perlu Rawat, Daun Sehat)
 class StatsSummaryRow extends StatelessWidget {
   const StatsSummaryRow({super.key});
 
@@ -14,38 +13,38 @@ class StatsSummaryRow extends StatelessWidget {
     return Consumer<DashboardProvider>(
       builder: (context, dashboard, _) {
         final stat = dashboard.weatherStat;
+        final totalTanaman = '${stat.totalDetections}';
+        final perluRawat = '${stat.activeThreatCount}';
+        final daunSehat = '${stat.totalDetections - stat.activeThreatCount}';
 
         return Row(
           children: [
-            // Total Deteksi
+            // Stat 1: Total Tanaman
             Expanded(
-              child: _buildMetricCard(
-                context,
-                title: 'Total Deteksi',
-                value: '${stat.totalDetections}',
-                valueColor: AppColors.textPrimary,
+              child: _buildStatCard(
+                value: totalTanaman,
+                label: 'Total Tanaman',
+                valueColor: AppColors.homeStatTotal,
               ),
             ),
-            const SizedBox(width: AppSizes.p10),
+            const SizedBox(width: 12),
 
-            // Tanaman Sehat
+            // Stat 2: Perlu Rawat
             Expanded(
-              child: _buildMetricCard(
-                context,
-                title: 'Tanaman Sehat',
-                value: '${stat.healthyPercentage}%',
-                valueColor: AppColors.primaryGreen,
+              child: _buildStatCard(
+                value: perluRawat,
+                label: 'Perlu Rawat',
+                valueColor: AppColors.homeStatCare,
               ),
             ),
-            const SizedBox(width: AppSizes.p10),
+            const SizedBox(width: 12),
 
-            // Terkena Penyakit / Hama
+            // Stat 3: Daun Sehat
             Expanded(
-              child: _buildMetricCard(
-                context,
-                title: 'Penyakit Aktif',
-                value: '${stat.activeThreatCount}',
-                valueColor: AppColors.tomatoRed,
+              child: _buildStatCard(
+                value: daunSehat,
+                label: 'Daun Sehat',
+                valueColor: AppColors.homeStatHealthy,
               ),
             ),
           ],
@@ -54,48 +53,57 @@ class StatsSummaryRow extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard(
-    BuildContext context, {
-    required String title,
+  Widget _buildStatCard({
     required String value,
+    required String label,
     required Color valueColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.p8,
-        vertical: AppSizes.p14,
-      ),
+      height: 70,
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppSizes.roundedL,
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.6), width: 1.0),
-        boxShadow: const [
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x08000000),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 8,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11.0,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 24.0,
+                fontWeight: FontWeight.w700,
+                color: valueColor,
+                height: 1.15,
+              ),
             ),
           ),
-          const SizedBox(height: AppSizes.p6),
-          Text(
-            value,
-            style: AppTextStyles.metricValue.copyWith(
-              color: valueColor,
-              fontSize: 20.0,
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 10.0,
+                fontWeight: FontWeight.w400,
+                color: AppColors.homeStatLabel,
+                height: 1.2,
+              ),
             ),
           ),
         ],

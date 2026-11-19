@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_sizes.dart';
 import '../../../theme/app_text_styles.dart';
-import '../../../widgets/app_button.dart';
+import '../../scan/camera_scan_screen.dart';
 
-/// Banner ajakan scan daun tomat sesuai desain Figma
+/// Banner ajakan scan daun tomat sesuai Desain Figma Frame: home (Banner Scan)
 class ScanBannerCard extends StatelessWidget {
   final VoidCallback? onScanPressed;
 
@@ -16,76 +16,127 @@ class ScanBannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.p16,
-        vertical: AppSizes.p14,
-      ),
+      width: double.infinity,
+      height: 138,
       decoration: BoxDecoration(
-        gradient: AppColors.scanBannerGradient,
-        borderRadius: AppSizes.roundedXL,
+        color: AppColors.homeBannerBg,
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.tomatoRed.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.20),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Camera Icon in container
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.22),
-              borderRadius: AppSizes.roundedL,
-            ),
-            child: const Icon(
-              Icons.camera_alt_outlined,
-              color: AppColors.textWhite,
-              size: AppSizes.iconSizeLarge,
-            ),
-          ),
-          const SizedBox(width: AppSizes.p12),
-
-          // Text labels
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Foto Daun Tomat Sekarang',
-                  style: TextStyle(
-                    color: AppColors.textWhite,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                  ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          children: [
+            // Background Image
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/hero_tomatoes.webp',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: AppColors.homeBannerBg,
                 ),
-                const SizedBox(height: AppSizes.p2),
-                Text(
-                  'Ambil foto untuk diagnosis instan',
-                  style: TextStyle(
-                    color: AppColors.textWhite.withValues(alpha: 0.85),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSizes.p8),
 
-          // Pill Action Button: Scan
-          AppButton.whitePill(
-            label: 'Scan',
-            height: 34,
-            onPressed: onScanPressed ??
-                () {
-                  _showScanPrompt(context);
-                },
-          ),
-        ],
+            // Gradient Overlay
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: AppColors.homeBannerOverlay,
+                ),
+              ),
+            ),
+
+            // Content Left Column
+            Positioned(
+              left: 18,
+              top: 14,
+              right: 110,
+              bottom: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        'Pindai Daun Tomat',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 17.0,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          height: 1.2,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Deteksi hama & jamur langsung di kebun dalam 2 detik',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xE6FFFFFF), // rgba(255, 255, 255, 0.90)
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Pill Button "Buka Kamera"
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onScanPressed ?? () => _showScanPrompt(context),
+                      borderRadius: BorderRadius.circular(17),
+                      child: Container(
+                        height: 32,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(17),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.camera_alt_outlined,
+                              color: AppColors.homeBannerBtnText,
+                              size: 16,
+                            ),
+                            SizedBox(width: 4),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Buka Kamera',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.homeBannerBtnText,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -139,8 +190,11 @@ class ScanBannerCard extends StatelessWidget {
                   subtitle: const Text('Gunakan framing guide untuk fokus akurat', style: TextStyle(fontSize: 12)),
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Membuka kamera dengan Framing Guide...')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CameraScanScreen(),
+                      ),
                     );
                   },
                 ),
